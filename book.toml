@@ -1,0 +1,6 @@
+[book]
+title = "Linux笔记"
+authors = ["袁世超"]
+language = "zh-CN"
+multilingual = true
+src = "src"
