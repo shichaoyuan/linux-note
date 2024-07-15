@@ -11,3 +11,9 @@
 
 # 知其然
 
+- [内存](mm/README.md)
+    - [物理内存](mm/physical_memory.md)
+
+# 材料
+- [材料](other/README.md)
+    - [系统日志](other/syslog.md)

@@ -54,22 +54,25 @@ lrwxrwxrwx 1 root root    0 Jul  6 11:38 subsystem -> ../../../../bus/node
 
 NUMA初始化调用链
 ```palin
--> setup_arch //arch/x86/kernel/setup.c
-  |-> e820__memory_setup // arch/x86/kernel/e820.c
-  |-> trim_bios_range //arch/x86/kernel/setup.c
-  |-> e820__end_of_ram_pfn // arch/x86/kernel/e820.c
-  |-> initmem_init // arch/x86/mm/numa_64.c
-    |-> x86_numa_init // arch/x86/mm/numa.c
-      |-> numa_init(x86_acpi_numa_init)
-        |-> x86_acpi_numa_init // arch/x86/mm/srat.c
-          |-> acpi_numa_init
-            |-> acpi_parse_memory_affinity
-              |-> acpi_numa_memory_affinity_init
-                |-> numa_add_memblk // arch/x86/mm/numa.c
-        |-> numa_cleanup_meminfo
-        |-> numa_register_memblks
-          |-> alloc_node_data
-  |-> x86_init.paging.pagetable_init()
+-> start_kernel // init/main.c
+  |-> setup_arch //arch/x86/kernel/setup.c
+    |-> e820__memory_setup // arch/x86/kernel/e820.c
+    |-> trim_bios_range //arch/x86/kernel/setup.c
+    |-> e820__end_of_ram_pfn // arch/x86/kernel/e820.c
+    |-> initmem_init // arch/x86/mm/numa_64.c
+      |-> x86_numa_init // arch/x86/mm/numa.c
+        |-> numa_init(x86_acpi_numa_init)
+          |-> x86_acpi_numa_init // arch/x86/mm/srat.c
+            |-> acpi_numa_init
+              |-> acpi_parse_memory_affinity
+                |-> acpi_numa_memory_affinity_init
+                  |-> numa_add_memblk // arch/x86/mm/numa.c
+          |-> numa_cleanup_meminfo
+          |-> numa_register_memblks
+            |-> alloc_node_data
+    |-> x86_init.paging.pagetable_init()
+  |-> mm_core_init // mm/mm_init.c
+    |-> mem_init // arch/x86/mm/init_64.c  after_bootmem=1
 ```
 
 
@@ -400,5 +403,6 @@ typedef struct pglist_data {
 
 ```
 
-千米分页
+在此期间已经有分配内存的动作了，例如alloc_node_data，此时管理内存的数据结构是 memblock。
+
 
