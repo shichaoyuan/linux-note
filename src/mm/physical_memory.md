@@ -405,4 +405,88 @@ typedef struct pglist_data {
 
 在此期间已经有分配内存的动作了，例如alloc_node_data，此时管理内存的数据结构是 memblock。
 
+## memblock
 
+
+### 数据结构
+
+定义在 `include/linux/memblock.h`
+
+```c
+/**
+ * struct memblock_region - represents a memory region
+ * @base: base address of the region
+ * @size: size of the region
+ * @flags: memory region attributes
+ * @nid: NUMA node id
+ */
+struct memblock_region {
+	phys_addr_t base;
+	phys_addr_t size;
+	enum memblock_flags flags;
+#ifdef CONFIG_NUMA
+	int nid;
+#endif
+};
+
+/**
+ * struct memblock_type - collection of memory regions of certain type
+ * @cnt: number of regions
+ * @max: size of the allocated array
+ * @total_size: size of all regions
+ * @regions: array of regions
+ * @name: the memory type symbolic name
+ */
+struct memblock_type {
+	unsigned long cnt;
+	unsigned long max;
+	phys_addr_t total_size;
+	struct memblock_region *regions;
+	char *name;
+};
+
+/**
+ * struct memblock - memblock allocator metadata
+ * @bottom_up: is bottom up direction?
+ * @current_limit: physical address of the current allocation limit
+ * @memory: usable memory regions
+ * @reserved: reserved memory regions
+ */
+struct memblock {
+	bool bottom_up;  /* is bottom up direction? */
+	phys_addr_t current_limit;
+	struct memblock_type memory;
+	struct memblock_type reserved;
+};
+```
+
+全局对象在 `mm/memblock.c`
+```c
+static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS] __initdata_memblock;
+static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_RESERVED_REGIONS] __initdata_memblock;
+
+struct memblock memblock __initdata_memblock = {
+	.memory.regions		= memblock_memory_init_regions,
+	.memory.cnt		= 1,	/* empty dummy entry */
+	.memory.max		= INIT_MEMBLOCK_MEMORY_REGIONS,
+	.memory.name		= "memory",
+
+	.reserved.regions	= memblock_reserved_init_regions,
+	.reserved.cnt		= 1,	/* empty dummy entry */
+	.reserved.max		= INIT_MEMBLOCK_RESERVED_REGIONS,
+	.reserved.name		= "reserved",
+
+	.bottom_up		= false,
+	.current_limit		= MEMBLOCK_ALLOC_ANYWHERE,
+};
+
+/*
+ * keep a pointer to &memblock.memory in the text section to use it in
+ * __next_mem_range() and its helpers.
+ *  For architectures that do not keep memblock data after init, this
+ * pointer will be reset to NULL at memblock_discard()
+ */
+static __refdata struct memblock_type *memblock_memory = &memblock.memory;
+```
+
+### 

@@ -62,6 +62,11 @@ vng --user root -m 4G --numa 2G,cpus=0-1 --numa 2G,cpus=2-3  --cpus 4 --network 
 
 vng默认会将本机的rootfs作为虚拟机的rootfs
 
+如果要增加内核的启动参数，可以这样
+```shell
+vng ... --append="memblock=debug"
+```
+
 ## GDB
 
 创建 ~/.gdbinit
