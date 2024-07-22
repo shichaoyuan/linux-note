@@ -10,6 +10,8 @@
     - [virtme-ng](lab_env/virtme_ng.md)
 
 # 知其然
+- [宏](macro/README.md)
+    - [内存](macro/memory.md)
 
 - [内存](mm/README.md)
     - [物理内存](mm/physical_memory.md)

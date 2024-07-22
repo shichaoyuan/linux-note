@@ -59,6 +59,7 @@ NUMA初始化调用链
     |-> e820__memory_setup // arch/x86/kernel/e820.c
     |-> trim_bios_range //arch/x86/kernel/setup.c
     |-> e820__end_of_ram_pfn // arch/x86/kernel/e820.c
+	|-> e820__memblock_setup // arch/x86/kernel/e820.c
     |-> initmem_init // arch/x86/mm/numa_64.c
       |-> x86_numa_init // arch/x86/mm/numa.c
         |-> numa_init(x86_acpi_numa_init)
@@ -489,4 +490,35 @@ struct memblock memblock __initdata_memblock = {
 static __refdata struct memblock_type *memblock_memory = &memblock.memory;
 ```
 
-### 
+### 操作记录
+
+e820__memblock_setup方法中，将从e820获取的物理地址段添加到了`memblock`中
+
+```log
+[    0.000000] memblock_reserve: [0x0000000001000000-0x00000000035fffff] setup_arch+0x275/0xf80
+[    0.000000] memblock_reserve: [0x0000000000000000-0x000000000000ffff] setup_arch+0x281/0xf80
+[    0.000000] memblock_reserve: [0x000000000009f000-0x00000000000fffff] setup_arch+0x3a1/0xf80
+...
+[    0.003805] memblock_reserve: [0x00000000000f5470-0x00000000000f547f] smp_scan_config+0xc5/0x150
+[    0.003808] memblock_reserve: [0x00000000000f5480-0x00000000000f5557] smp_scan_config+0x135/0x150
+[    0.003811] memblock_reserve: [0x0000000003600000-0x0000000003608fff] setup_arch+0xd94/0xf80
+[    0.003813] memblock_add: [0x0000000000001000-0x000000000009fbff] e820__memblock_setup+0x6e/0xb0
+[    0.003815] memblock_add: [0x0000000000100000-0x00000000bffdffff] e820__memblock_setup+0x6e/0xb0
+[    0.003816] memblock_add: [0x0000000100000000-0x000000013fffffff] e820__memblock_setup+0x6e/0xb0
+[    0.003818] MEMBLOCK configuration:
+[    0.003818]  memory size = 0x00000000fff7ec00 reserved size = 0x000000000267a000
+[    0.003818]  memory.cnt  = 0x3
+[    0.003819]  memory[0x0]	[0x0000000000001000-0x000000000009efff], 0x000000000009e000 bytes flags: 0x0
+[    0.003820]  memory[0x1]	[0x0000000000100000-0x00000000bffdffff], 0x00000000bfee0000 bytes flags: 0x0
+[    0.003820]  memory[0x2]	[0x0000000100000000-0x000000013fffffff], 0x0000000040000000 bytes flags: 0x0
+[    0.003821]  reserved.cnt  = 0x3
+[    0.003821]  reserved[0x0]	[0x0000000000000000-0x000000000000ffff], 0x0000000000010000 bytes flags: 0x0
+[    0.003822]  reserved[0x1]	[0x000000000009f000-0x00000000000fffff], 0x0000000000061000 bytes flags: 0x0
+[    0.003822]  reserved[0x2]	[0x0000000001000000-0x0000000003608fff], 0x0000000002609000 bytes flags: 0x0
+```
+
+能加入到`memblock_memory`的只有`E820_TYPE_RAM`、`E820_TYPE_RESERVED_KERN`这两种类型的地址段。
+
+dump的信息与add的记录略有区别，原因是地址按照PAGE_SIZE(0x1000)进行了对齐。
+
+reserve 的
