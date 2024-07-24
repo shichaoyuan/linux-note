@@ -517,8 +517,118 @@ e820__memblock_setup方法中，将从e820获取的物理地址段添加到了`m
 [    0.003822]  reserved[0x2]	[0x0000000001000000-0x0000000003608fff], 0x0000000002609000 bytes flags: 0x0
 ```
 
+[0x0000000001000000-0x00000000035fffff] 这一段是kernel二进制的地址空间。
+
 能加入到`memblock_memory`的只有`E820_TYPE_RAM`、`E820_TYPE_RESERVED_KERN`这两种类型的地址段。
 
 dump的信息与add的记录略有区别，原因是地址按照PAGE_SIZE(0x1000)进行了对齐。
 
-reserve 的
+添加memblock段的函数最终调的都是`memblock_add_range`：
+```c
+static int __init_memblock memblock_add_range(struct memblock_type *type,
+				phys_addr_t base, phys_addr_t size,
+				int nid, enum memblock_flags flags)
+{
+	bool insert = false;
+	phys_addr_t obase = base;
+	phys_addr_t end = base + memblock_cap_size(base, &size);
+	int idx, nr_new, start_rgn = -1, end_rgn;
+	struct memblock_region *rgn;
+
+	if (!size)
+		return 0;
+
+	/* special case for empty array */
+	if (type->regions[0].size == 0) { // 初始为空的状态，直接赋值给第一个regions
+		WARN_ON(type->cnt != 1 || type->total_size);
+		type->regions[0].base = base;
+		type->regions[0].size = size;
+		type->regions[0].flags = flags;
+		memblock_set_region_node(&type->regions[0], nid);
+		type->total_size = size;
+		return 0;
+	}
+
+	/*
+	 * The worst case is when new range overlaps all existing regions,
+	 * then we'll need type->cnt + 1 empty regions in @type. So if
+	 * type->cnt * 2 + 1 is less than or equal to type->max, we know
+	 * that there is enough empty regions in @type, and we can insert
+	 * regions directly.
+	 */
+	if (type->cnt * 2 + 1 <= type->max)
+		insert = true;
+
+repeat:
+	/*
+	 * The following is executed twice.  Once with %false @insert and
+	 * then with %true.  The first counts the number of regions needed
+	 * to accommodate the new area.  The second actually inserts them.
+	 */
+	base = obase;
+	nr_new = 0;
+
+	for_each_memblock_type(idx, type, rgn) {
+		phys_addr_t rbase = rgn->base;
+		phys_addr_t rend = rbase + rgn->size;
+
+		if (rbase >= end) // 此时应该插入在此rgn前面，所以可以退出循环
+			break;
+		if (rend <= base)
+			continue;
+		/*
+		 * @rgn overlaps.  If it separates the lower part of new
+		 * area, insert that portion.
+		 */
+		if (rbase > base) { //如果有重叠
+#ifdef CONFIG_NUMA
+			WARN_ON(nid != memblock_get_region_node(rgn));
+#endif
+			WARN_ON(flags != rgn->flags);
+			nr_new++;
+			if (insert) {
+				if (start_rgn == -1)
+					start_rgn = idx;
+				end_rgn = idx + 1;
+				// 将不重叠的前半部分插入进来
+				memblock_insert_region(type, idx++, base,
+						       rbase - base, nid,
+						       flags);
+			}
+		}
+		/* area below @rend is dealt with, forget about it */
+		base = min(rend, end);
+	}
+
+	/* insert the remaining portion */
+	if (base < end) {
+		nr_new++;
+		if (insert) {
+			if (start_rgn == -1)
+				start_rgn = idx;
+			end_rgn = idx + 1;
+			memblock_insert_region(type, idx, base, end - base,
+					       nid, flags);
+		}
+	}
+
+	if (!nr_new)
+		return 0;
+
+	/*
+	 * If this was the first round, resize array and repeat for actual
+	 * insertions; otherwise, merge and return.
+	 */
+	if (!insert) {
+		while (type->cnt + nr_new > type->max)
+			if (memblock_double_array(type, obase, size) < 0)
+				return -ENOMEM;
+		insert = true;
+		goto repeat;
+	} else {
+		// 合并连续的rgn
+		memblock_merge_regions(type, start_rgn, end_rgn);
+		return 0;
+	}
+}
+```
