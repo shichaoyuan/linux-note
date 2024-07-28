@@ -10,6 +10,9 @@
     - [virtme-ng](lab_env/virtme_ng.md)
 
 # 知其然
+- [CPU工作模式](mode/README.md)
+    - [实模式](mode/real_mode.md)
+    - [保护模式](mode/protected_mode.md)
 - [宏](macro/README.md)
     - [内存](macro/memory.md)
 
