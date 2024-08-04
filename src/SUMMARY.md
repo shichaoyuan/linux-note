@@ -18,6 +18,8 @@
     - [内存](macro/memory.md)
 - [引导](boot/README.md)
     - [阶段](boot/stage.md)
+- [初始化](init/README.md)
+    - [内核起始](init/startup.md)
 - [内存](mm/README.md)
     - [物理内存](mm/physical_memory.md)
 
