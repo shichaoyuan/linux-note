@@ -31,3 +31,34 @@ memblock_reserve(__pa_symbol(_text),
 #define __START_KERNEL_map	_AC(0xffffffff80000000, UL)
 
 ```
+
+## pgd_index 
+
+```c
+#ifndef pgd_index
+/* Must be a compile-time constant, so implement it as a macro */
+#define pgd_index(a)  (((a) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
+#endif
+```
+
+传入的a是虚拟地址。
+
+`PGDIR_SHIFT`默认值为39，如果支持5级那么该值将在`configure_5level_paging`方法中更新为48。
+
+`PTRS_PER_PGD`值为512，也就是9为的mask，加上shift，也就是5级分页57位，4级分页48位。
+
+那么该宏计算出的是虚拟地址a在pgd中的偏移。
+
+## pud_index
+
+```c
+#define pud_index(x)	(((x) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
+```
+
+```c
+/*
+ * 3rd level page
+ */
+#define PUD_SHIFT	30
+#define PTRS_PER_PUD	512
+```

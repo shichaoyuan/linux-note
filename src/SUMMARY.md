@@ -20,7 +20,9 @@
     - [阶段](boot/stage.md)
 - [初始化](init/README.md)
     - [内核起始](init/startup.md)
+    - [start_kernel](init/start_kernel.md)
 - [内存](mm/README.md)
+    - [分页](mm/paging.md)
     - [物理内存](mm/physical_memory.md)
 
 # 材料
