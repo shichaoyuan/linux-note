@@ -7,6 +7,7 @@
     - [编译](lab_env/compile.md)
     - [UML](lab_env/uml.md)
     - [virtme-ng](lab_env/virtme_ng.md)
+    - [vscode](lab_env/vscode.md)
 
 # 基础知识
 - [CPU工作模式](mode/README.md)
