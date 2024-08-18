@@ -23,6 +23,7 @@
     - [内核起始](init/startup.md)
     - [start_kernel](init/start_kernel.md)
 - [内存](mm/README.md)
+    - [内核页表](mm/swapper_pg_dir.md)
     - [分页](mm/paging.md)
     - [物理内存](mm/physical_memory.md)
 
