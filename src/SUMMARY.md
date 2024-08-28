@@ -26,6 +26,7 @@
     - [内核页表](mm/swapper_pg_dir.md)
     - [分页](mm/paging.md)
     - [物理内存](mm/physical_memory.md)
+    - [虚拟内存](mm/virtual_memory.md)
 
 # 材料
 - [材料](other/README.md)
